@@ -225,3 +225,4 @@ class CommandNotFoundException extends ConsoleCommandException {
 		return command;
 	}
 }
+
