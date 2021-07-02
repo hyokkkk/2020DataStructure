@@ -1,3 +1,4 @@
+
 /******************************************************************************
  * MovieDB의 인터페이스에서 공통으로 사용하는 클래스.
  */
@@ -24,8 +25,10 @@ public class MovieDBItem implements Comparable<MovieDBItem> {
 
     @Override
     public int compareTo(MovieDBItem other) {
-        // TODO delete the line below and implement this method
-        throw new UnsupportedOperationException();
+        int cmp = genre.compareTo(other.getGenre());
+        if(cmp == 0){
+            return title.compareTo(other.getTitle());
+        } return cmp;
     }
 
     @Override
