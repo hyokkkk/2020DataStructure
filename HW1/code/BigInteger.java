@@ -6,302 +6,240 @@ import java.util.regex.Pattern;
 
 public class BigInteger
 {
-                public static final String QUIT_COMMAND = "quit";
-                public static final String MSG_INVALID_INPUT = "WRONG INPUT";
+    public static final String QUIT_COMMAND = "quit";
+    public static final String MSG_INVALID_INPUT = "입력이 잘못되었습니다.";
 
-                public static final Pattern EXPRESSION_PATTERN = Pattern.compile("^(\\D?)(\\d*)(\\+|-|\\*)(\\D?)(\\d*)$");
+    // (부호 0~1개)(숫자)(+/-/*)(부호 0~1개)(숫자)
+    // group(0): whole, 그 다음부터 group(1), group(2)...로 정해짐.
+    public static final Pattern EXPRESSION_PATTERN = Pattern.compile("^(\\D?)(\\d*)(\\+|-|\\*)(\\D?)(\\d*)$");
 
-                //to use operators when decide which method should we use
-                static String first_operator;
-                static String last_operator;
-                static String real_operator;
+    static String bin_oper;
+    static String una_oper1;
+    static String una_oper2;
+    static boolean negative = false;
 
-                int len;
-                int[] arr;
-                String operator;
+    // instance vars
+    private byte[] data;
+    private int arrLen;
+    private String str;
+
+    // add/sum/mul로 보낼 때 사용
+    public BigInteger(String s){
+        arrLen = s.length();
+        data = new byte[arrLen];
+        str = s;
+        //init the byte array. reversed digit.
+        for (int i = 0; i < arrLen; i++){
+            data[arrLen-1-i] = (byte)(str.charAt(i)-'0');
+        }
+    }
+
+    // result 담을 때 사용
+    public BigInteger(int arrLen){
+        this.arrLen = arrLen;
+        data = new byte[arrLen];
+        str = "";
+        // init to 0
+        for (int i = 0; i < arrLen; i++){
+            data[i] = 0;
+        }
+    }
 
 
-                public BigInteger() {
+
+    // for less branch instruction, no Ternery operations.
+    public BigInteger add(BigInteger num2){
+
+        int len1 = str.length();
+        int len2 = num2.str.length();
+        BigInteger big, small;
+        BigInteger result = new BigInteger(Math.max(len1, len2) + 1);
+        negative = una_oper1.equals("-") ? true : false;    // 애초에 una_oper1 == bin_oper 인 경우만 add로 들어온다.
+
+        if (len1 > len2)    { big = this; small = num2; }
+        else                { big = num2; small = this; }
+
+        boolean cout = false; // carry out
+
+        // small과 겹치는 부분
+        for (int i = 0; i < small.arrLen; i++){
+            big.data[i] = cout ? (byte)(big.data[i]+1) : big.data[i];
+            cout = false;
+
+            if (big.data[i] + small.data[i] > 9){
+                cout = true;
+                result.data[i] = (byte)(big.data[i] + small.data[i] -10);
+            } else{
+                result.data[i] = (byte)(big.data[i] + small.data[i]);
+            }
+        }
+        // 나머지 big part
+        for (int i = small.arrLen; i < big.arrLen; i++){
+            big.data[i] = cout ? (byte)(big.data[i]+1) : big.data[i];
+            cout = false;
+
+            if (big.data[i] > 9) {
+                cout = true;
+                result.data[i] = (byte)(big.data[i] - 10);
+            } else{
+                result.data[i] = big.data[i];
+            }
+        }
+        result.data[big.arrLen] = cout ? (byte)1 : 0;       // carry out to msb
+
+        return result;
+    }
+
+
+
+    // num1 - num2
+    public BigInteger subtract(BigInteger num2){
+
+        int len1 = str.length();
+        int len2 = num2.str.length();
+        BigInteger big, small;
+        BigInteger result = new BigInteger(Math.max(len1, len2));
+
+        // |num1| > |num2|
+        if ((len1 > len2) || (len1 == len2 && str.compareTo(num2.str) > 0)){
+            negative = una_oper1.equals("-") ? true : false;
+            big = this;
+            small = num2;
+        } else if(str.compareTo(num2.str) == 0){ // num1 == num2
+            negative = false;
+            return result;
+        }
+        else { // |num1| < |num2|
+            negative = bin_oper.equals("-") ? true : false;
+            big = num2;
+            small = this;
+        }
+
+        boolean cin = false; //carry in
+
+        // small num과 겹치는 자릿수 계산
+        for (int i = 0; i < small.arrLen; i++){
+            big.data[i] = cin ? (byte)(big.data[i]-1) : big.data[i];
+            cin = false;
+
+            if (big.data[i] < small.data[i]){
+                cin = true;
+                result.data[i] = (byte)(big.data[i] + 10 - small.data[i]);
+            } else{
+                result.data[i] = (byte)(big.data[i] - small.data[i]);
+            }
+        }
+        // 남은 big num 부분
+        if (big.arrLen > small.arrLen){
+            for (int i = small.arrLen; i < big.arrLen; i++){
+                big.data[i] = cin ? (byte)(big.data[i]-1) : big.data[i];
+                cin = false;
+
+                if (big.data[i] < 0) {
+                    cin = true;
+                    result.data[i] = (byte)(big.data[i] + 10);
+                } else{
+                    result.data[i] = big.data[i];
                 }
-
-		public BigInteger(int[] arr) {
-			this.arr = arr;
-			len = arr.length;
-			operator = "";
-		}
-
-		public BigInteger(String operator, int[] arr) {
-			this.arr = arr;
-			len = arr.length;
-			this.operator = operator;
-		}
-
-
-		@Override
-	    public String toString() {
-	    	String result = "";
-	    	boolean flag =  false;
-
-	    	//to remove useless 0 in the in front of the array. ex) 0000123->123
-			for(int i=0; i<len; i++) {
-				if(arr[i] != 0) {
-					flag = true;
-					if(flag) {
-						for(int j = i; j<len; j++) {
-							result += arr[j];
-						}
-						break;
-					}
-				}
-			}
-
-			//flag turns 'true' when it comes to meet 'not 0 number'.
-			//if 'flag' is still false, it means there is no 'not 0 number' and so the answer is 0
-			if(!flag) {
-				result = "0";
-				return result;
-			}
-	    	return operator+result;
-		}
+            }
+        }
+        return result;
+    }
 
 
 
-	    public BigInteger add(BigInteger big){
-			final int COUT = 1;
-			int lenR = len+1; // the length of result should be one more longer than the length of the bigger number
-			int[] add_result = new int [lenR];
-			String minus_oper = "";
+    public BigInteger multiply(BigInteger num2){
 
-			//start adding
-			for(int i = 1; i <= len; i++) {
-				add_result[lenR-i] = arr[len-i] + big.arr[len-i];
+        BigInteger result = new BigInteger(str.length() + num2.str.length());
+        negative = false;
 
-				//Carry-out
-				if(add_result[lenR-i] >=10) {
-					add_result[lenR-i] -=10;
-					if(len-i-1 >= 0) arr[len-i-1] += COUT;
-					else add_result[0]=1;
-				}
-			}
-			// the case that we need - operator, like -A -B. logical expression is got by drawing a truth table.
-			if(((real_operator.equals("+")) ^ !(last_operator.equals("-"))) &(first_operator.equals("-"))) {
-				minus_oper = "-";
-			}
+        if (str.equals("0") || num2.str.equals("0")) return result;
+        negative = una_oper1.equals(una_oper2) ? false : true;
 
-			//pass just "" when we do not need any operators.
-			return new BigInteger(minus_oper, add_result);
-	    }
+        // considering locality, sequential memory access should be avoided.
+        int carry = 0;
+        for (int ridx = 0; ridx < result.arrLen-1; ridx++){
+            int sum = carry;
+            for (int idx = 0; idx < arrLen; idx++){
+                if (ridx-idx >= 0 && ridx-idx < num2.arrLen){
+                    sum += data[idx] * num2.data[ridx-idx];
+                }
+            }
+            carry = sum / 10;
+            result.data[ridx] = (byte)(sum % 10);
+        }
+        result.data[result.arrLen-1] = (byte)carry;
 
-
-
-	    public BigInteger subtract(Boolean exchange, BigInteger big){
-	    	int lenR = len; //length of a result is enough with same length of the longer one
-	    	int[] sub_result = new int[lenR];
-			String minus_oper = "";
-
-			//subtract from the back
-			for(int i=0; i < len; i++) {
-				if(arr[len-1-i] >= big.arr[len-1-i]) {
-					sub_result[len-1-i] = arr[len-1-i] - big.arr[len-1-i];
-				}
-
-				//bada naerim
-				else {sub_result[len-1-i] = arr[len-1-i] +10 - big.arr[len-1-i];
-				arr[len-2-i] -=1;
-				}
-			}
-
-
-			//the cases that we need '-' operator.
-			if(exchange == true) {
-				if(!(first_operator.equals("-")) & ((real_operator.equals("-")) ^ last_operator.equals("-"))) {
-					minus_oper = "-";
-				}
-			}
-
-			else {
-				if((first_operator.equals("-")) & (!((real_operator.equals("-")) ^ last_operator.equals("-")))){
-					minus_oper = "-";
-				}
-			}
-
-			return new BigInteger(minus_oper, sub_result);
-	    }
+        return result;
+    }
 
 
 
-	    public BigInteger multiply(BigInteger big){
-	    	int len1 = len;
-			int len2 = big.len;
-			int lenR = len1 + len2; //result length
-			int[] mult_result = new int[lenR];
-			String minus_oper = "";
+    @Override
+    public String toString(){
+        StringBuilder result = new StringBuilder("");
 
-			//instead of using some temporary array, directly add result numbers to the result array.
-			for(int i=0; i < len2; i++) {
-				for(int j=0; j< len1; j++) {
-					mult_result[lenR -1 -(i+j)] += (big.arr[len2 -1 -i] * arr[len1 -1 -j]) % 10;
-					mult_result[lenR -2 -(i+j)] += (big.arr[len2 -1 -i] * arr[len1 -1 -j]) / 10;
+        for (int i = arrLen -1; i >=0; i--){
+            result.append(data[i]);
+        }
 
-					if (lenR -2 -(i+j) >= 0) {
-						if(mult_result[lenR -1 -(i+j)] >= 10) {
-							mult_result[lenR -2 -(i+j)] += mult_result[lenR-1-(i+j)]/10;
-							mult_result[lenR-1-(i+j)] = mult_result[lenR-1-(i+j)] %10;
-						}
-						if(mult_result[lenR -2 -(i+j)] >= 10) {
-							mult_result[lenR -3 -(i+j)] += mult_result[lenR-2-(i+j)]/10;
-							mult_result[lenR-2-(i+j)] = mult_result[lenR-2-(i+j)] %10;
-						}
-					}
-					else{break;}
-				}
-			}
+        // 0없애기
+        while(result.charAt(0)=='0' && arrLen != 1) {
+            result.deleteCharAt(0);
+            arrLen --;
+        }
 
-				//the cases that we need '-' operator
-				if(real_operator.equals("*") & (first_operator.equals("-") ^ last_operator.equals("-"))) {
-					minus_oper = "-";
-				}
-				return new BigInteger(minus_oper, mult_result);
-	    	}
+        return negative ? "-" + result.toString() : result.toString();
+    }
 
 
 
-	    static BigInteger evaluate(String input) throws IllegalArgumentException{
-	       String numbers = input;
-	       numbers = numbers.replaceAll("\\p{Z}", ""); //erase all the blank spaces
-	       Matcher m = EXPRESSION_PATTERN.matcher(numbers);
+    static BigInteger evaluate(String input) throws IllegalArgumentException{
+        //1. remove all blanks.
+        input = input.replace(" ", "");
 
-	       BigInteger result = new BigInteger();
+        //2. parsing.
+        Matcher m = EXPRESSION_PATTERN.matcher(input);
+        if(!m.matches()){//find는 일치하는 게 포함되면 T, matches()는 입력 전체가 일치해야 T.
+           new IllegalArgumentException();
+        }
 
+        //3. extract unary, binary operators.
+        bin_oper = m.group(3);
+        una_oper1 = m.group(1).equals("") ? "+" : m.group(1); //unary default = "+"
+        una_oper2 = m.group(4).equals("") ? "+" : m.group(4);
 
-	       if(m.find()) {
-				//extract operators from the given input for more useful using
-				first_operator = m.group(1);
-				real_operator = m.group(3);
-				last_operator = m.group(4);
+        //4. make operands instances.
+        BigInteger num1 = new BigInteger(m.group(2));
+        BigInteger num2 = new BigInteger(m.group(5));
 
-				//delete all operators except for the middle(real) operator, which is the criteria of split working
-				numbers = numbers.replaceAll("^(\\D?)(\\d*)(\\+|\\-|\\*)(\\D?)(\\d*)$", "$2$3$5");
-				String[] numbers_split = numbers.split("\\"+real_operator);
+        //5. binary oper == *, go to mul.
+        if (bin_oper.equals("*")) return num1.multiply(num2);
 
+        //6. add/sub operator handle
+        //   By comparing binary and unary2, convert unary2 to "+", in order to simplify later calculation.
+        if (una_oper2.equals("-")){
+            una_oper2 = "+";
+            bin_oper = bin_oper.equals("+") ? "-" : "+";
+        }
 
-				//go to add() when the operators are these combinations.
-				if ((!(first_operator.equals("-")) ^ (real_operator.equals("+")) ^ !(last_operator.equals("-"))) & !(real_operator.equals("*"))) {
-
-					//for more convenient calculation, lengthen the shorter array's length.
-					// ex. 123 + 4567 -> 123 becomes 0123
-					int len = Math.max(numbers_split[0].length(), numbers_split[1].length());
-					int[] arr_num1 = new int[len];
-					int[] arr_num2 = new int[len];
-
-					//put the first number's digits one by one to the first array.
-					for(int i = 0; i< numbers_split[0].length(); i++) {
-						arr_num1[len - numbers_split[0].length() + i] = numbers_split[0].charAt(i) - '0';
-					}
-
-					//put the second number's digits to the second array.
-					for(int i = 0; i< numbers_split[1].length(); i++) {
-						arr_num2[len - numbers_split[1].length() + i] = numbers_split[1].charAt(i) - '0';
-					}
-
-					BigInteger bignum1 = new BigInteger(arr_num1);
-					BigInteger bignum2 = new BigInteger(arr_num2);
-					BigInteger addresult = bignum1.add(bignum2);
-//
-					result = addresult;
-				}
-
-
-				//go to subtract method when the combinations are these.
-				else if (!(!(first_operator.equals("-"))  ^ (real_operator.equals("+")) ^ !(last_operator.equals("-"))) & !(real_operator.equals("*"))) {
-
-					//the length of the result array should be long as the longer number's array
-					int len = Math.max(numbers_split[0].length(), numbers_split[1].length());
-					int[] arr_num1 = new int[len];
-					int[] arr_num2 = new int[len];
-
-					//put the first number's digits one by one to the first array.
-					for(int i = 0; i< numbers_split[0].length(); i++) {
-						arr_num1[len - numbers_split[0].length() + i] = numbers_split[0].charAt(i) - '0';
-					}
-
-					//same working for the second number.
-					for(int i = 0; i< numbers_split[1].length(); i++) {
-						arr_num2[len - numbers_split[1].length() + i] = numbers_split[1].charAt(i) - '0';
-					}
-
-					BigInteger bignum1 = new BigInteger(arr_num1);
-					BigInteger bignum2 = new BigInteger(arr_num2);
-
-					Boolean exchange = false;
-
-					//we should subtract smaller absolute value number from the bigger absolute value one.
-					//compare the digits one by one from index 0 to decide which one is bigger.
-					for (int i = 0; i < len; i++) {
-						if(arr_num1[i] > arr_num2[i]) {
-							break;
-						}
-
-						//if the latter one is bigger, swap the num1 and num2 so that we can get num1 for the bigger one.
-						else if (arr_num1[i] < arr_num2[i]) {
-							BigInteger temp = bignum1;
-							bignum1 = bignum2;
-							bignum2 = temp;
-							exchange = true;
-							break;
-						}
-					}
-					BigInteger subresult = bignum1.subtract(exchange, bignum2);
-					result = subresult;
-				}
-
-
-				//combinations of operators for multiply
-				else if (real_operator.equals("*")) {
-
-					//dont need to change the length of each original numbers.
-					int[] arr_num1 = new int[numbers_split[0].length()];
-					int[] arr_num2 = new int[numbers_split[1].length()];
-
-					//put the first number's digits one by one to the first array.
-					for(int i=0; i<arr_num1.length; i++) {
-						arr_num1[i] = numbers_split[0].charAt(i)-'0';
-					}
-
-					//same working for the second number
-					for(int i=0; i<arr_num2.length; i++) {
-						arr_num2[i] = numbers_split[1].charAt(i)-'0';
-					}
-
-					BigInteger bignum1 = new BigInteger(arr_num1);
-					BigInteger bignum2 = new BigInteger(arr_num2);
-					BigInteger multresult = bignum1.multiply(bignum2);
-
-					result = multresult;
-				}
-	       }
-	       return result;
-	    }
+        // if right input is not guaranteed, should do exception handling.
+        return (una_oper1.equals(bin_oper)) ? num1.add(num2) : num1.subtract(num2);
+    }
 
 
 
-    public static void main(String[] args) throws Exception
-    {
-        try (InputStreamReader isr = new InputStreamReader(System.in))
-        {
-            try (BufferedReader reader = new BufferedReader(isr))
-            {
+    //Entry point
+    public static void main(String[] args) throws Exception{
+        try (InputStreamReader isr = new InputStreamReader(System.in)){
+            try (BufferedReader reader = new BufferedReader(isr)){
                 boolean done = false;
-                while (!done)
-                {
+                while (!done){
                     String input = reader.readLine();
-
-                    try
-                    {
+                    try{
                         done = processInput(input);
                     }
-                    catch (IllegalArgumentException e)
-                    {
+                    catch (IllegalArgumentException e){
                         System.err.println(MSG_INVALID_INPUT);
                     }
                 }
@@ -309,26 +247,19 @@ public class BigInteger
         }
     }
 
-    static boolean processInput(String input) throws IllegalArgumentException
-    {
+    static boolean processInput(String input) throws IllegalArgumentException{
         boolean quit = isQuitCmd(input);
-
-        if (quit)
-        {
+        if (quit){
             return true;
         }
-        else
-        {
+        else{
             BigInteger result = evaluate(input);
             System.out.println(result.toString());
-
             return false;
         }
     }
 
-    static boolean isQuitCmd(String input)
-    {
+    static boolean isQuitCmd(String input){
         return input.equalsIgnoreCase(QUIT_COMMAND);
     }
 }
-
