@@ -1,295 +1,304 @@
 import java.io.*;
 import java.util.*;
 
-public class SortingTest
-{
-	public static void main(String args[])
-	{
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+public class SortingTest{
+    public static void main(String args[]){
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	try{
+            boolean isRandom = false;	        // 입력받은 배열이 난수인가 아닌가?
+            int[] value;	                // 입력 받을 숫자들의 배열
+            String nums = br.readLine();	// 첫 줄을 입력 받음
+            if (nums.charAt(0) == 'r'){
+                // 난수일 경우
+                isRandom = true;	        // 난수임을 표시
 
-		try
-		{
-			boolean isRandom = false;	// 입력받은 배열이 난수인가 아닌가?
-			int[] value;	// 입력 받을 숫자들의 배열
-			String nums = br.readLine();	// 첫 줄을 입력 받음
-			if (nums.charAt(0) == 'r')
-			{
-				// 난수일 경우
-				isRandom = true;	// 난수임을 표시
+                String[] nums_arg = nums.split(" ");
+                int numsize = Integer.parseInt(nums_arg[1]);	// 총 갯수
+                int rminimum = Integer.parseInt(nums_arg[2]);	// 최소값
+                int rmaximum = Integer.parseInt(nums_arg[3]);	// 최대값
 
-				String[] nums_arg = nums.split(" ");
+                Random rand = new Random();	                // 난수 인스턴스를 생성한다.
 
-				int numsize = Integer.parseInt(nums_arg[1]);	// 총 갯수
-				int rminimum = Integer.parseInt(nums_arg[2]);	// 최소값
-				int rmaximum = Integer.parseInt(nums_arg[3]);	// 최대값
+                value = new int[numsize];	                // 배열을 생성한다.
+                for (int i = 0; i < value.length; i++)	        // 각각의 배열에 난수를 생성하여 대입
+                    value[i] = rand.nextInt(rmaximum - rminimum + 1) + rminimum;
+            }else{
+                // 난수가 아닐 경우
+                int numsize = Integer.parseInt(nums);
 
-				Random rand = new Random();	// 난수 인스턴스를 생성한다.
+                value = new int[numsize];	                // 배열을 생성한다.
+                for (int i = 0; i < value.length; i++)	        // 한줄씩 입력받아 배열원소로 대입
+                value[i] = Integer.parseInt(br.readLine());
+            }
 
-				value = new int[numsize];	// 배열을 생성한다.
-				for (int i = 0; i < value.length; i++)	// 각각의 배열에 난수를 생성하여 대입
-					value[i] = rand.nextInt(rmaximum - rminimum + 1) + rminimum;
-			}
-			else
-			{
-				// 난수가 아닐 경우
-				int numsize = Integer.parseInt(nums);
+            // 숫자 입력을 다 받았으므로 정렬 방법을 받아 그에 맞는 정렬을 수행한다.
+            while (true){
+                int[] newvalue = (int[])value.clone();	// 원래 값의 보호를 위해 복사본을 생성한다.
 
-				value = new int[numsize];	// 배열을 생성한다.
-				for (int i = 0; i < value.length; i++)	// 한줄씩 입력받아 배열원소로 대입
-					value[i] = Integer.parseInt(br.readLine());
-			}
+                String command = br.readLine();
 
-			// 숫자 입력을 다 받았으므로 정렬 방법을 받아 그에 맞는 정렬을 수행한다.
-			while (true)
-			{
-				int[] newvalue = (int[])value.clone();	// 원래 값의 보호를 위해 복사본을 생성한다.
+                long t = System.currentTimeMillis();
+                switch (command.charAt(0)){
+                    case 'B':	// Bubble Sort
+                        newvalue = DoBubbleSort(newvalue);
+                        break;
+                    case 'b':	// Bubble Sort Recursive
+                        newvalue = BubbleRecur(newvalue, newvalue.length-1);
+                        break;
+                    case 'I':	// Insertion Sort
+                        newvalue = DoInsertionSort(newvalue);
+                        break;
+                    case 'i':	// Insertion Sort Recursive
+                        newvalue = InsertionRecur(newvalue, newvalue.length-1);
+                        break;
+                    case 'H':	// Heap Sort
+                        newvalue = DoHeapSort(newvalue);
+                        break;
+                    case 'M':	// Merge Sort
+                        newvalue = DoMergeSort(newvalue, 0, newvalue.length-1);
+                        break;
+                    case 'Q':	// Quick Sort
+                        newvalue = DoQuickSort(newvalue, 0, newvalue.length-1);
+                        break;
+                    case 'R':	// Radix Sort
+                        newvalue = DoRadixSort(newvalue);
+                        break;
+                    case 'X':
+                        return;	// 프로그램을 종료한다.
+                    default:
+                        throw new IOException("잘못된 정렬 방법을 입력했습니다.");
+                }
+                if (isRandom){
+                    // 난수일 경우 수행시간을 출력한다.
+                    System.out.println((System.currentTimeMillis() - t) + " ms");
+                }else{
+                    // 난수가 아닐 경우 정렬된 결과값을 출력한다.
+                    for (int i = 0; i < newvalue.length; i++){
+                        System.out.println(newvalue[i]);
+                    }
+                }
+            }
+        }
+        catch (IOException e){
+            System.out.println("입력이 잘못되었습니다. 오류 : " + e.toString());
+        }
+    }
 
-				String command = br.readLine();
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] swap(int[] arr, int idx1, int idx2){
+        int temp = arr[idx1];
+        arr[idx1] = arr[idx2];
+        arr[idx2] = temp;
 
-				long t = System.currentTimeMillis();
-				switch (command.charAt(0))
-				{
-					case 'B':	// Bubble Sort
-						newvalue = DoBubbleSort(newvalue);
-						break;
-					case 'I':	// Insertion Sort
-						newvalue = DoInsertionSort(newvalue);
-						break;
-					case 'H':	// Heap Sort
-						newvalue = DoHeapSort(newvalue);
-						break;
-					case 'M':	// Merge Sort
-						newvalue = DoMergeSort(newvalue);
-						break;
-					case 'Q':	// Quick Sort
-						newvalue = DoQuickSort(newvalue);
-						break;
-					case 'R':	// Radix Sort
-						newvalue = DoRadixSort(newvalue);
-						break;
-					case 'X':
-						return;	// 프로그램을 종료한다.
-					default:
-						throw new IOException("잘못된 정렬 방법을 입력했습니다.");
-				}
-				if (isRandom)
-				{
-					// 난수일 경우 수행시간을 출력한다.
-					System.out.println((System.currentTimeMillis() - t) + " ms");
-				}
-				else
-				{
-					// 난수가 아닐 경우 정렬된 결과값을 출력한다.
-					for (int i = 0; i < newvalue.length; i++)
-					{
-						System.out.println(newvalue[i]);
-					}
-				}
+        return arr;
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] DoBubbleSort(int[] value){
+        // 1. general
+        for (int last = value.length -1; last > 0; last--){
+            for (int i = 0; i < last; i ++){
+                if (value[i] > value[i+1]) swap(value, i, i+1);
+            }
+        }
+        return value;
+    }
 
-			}
-		}
-		catch (IOException e)
-		{
-			System.out.println("입력이 잘못되었습니다. 오류 : " + e.toString());
-		}
-	}
+    private static int[] BubbleRecur(int[] value, int lastIdx){
+        //2. recursive. -> stackoverflow error 생긴다. java stack 작고 소즁해..
+        if (lastIdx == 0) return value;
+        for (int i = 0; i < lastIdx; i++){
+            if (value[i] > value[i+1]) swap(value, i, i+1);
+        }
+        BubbleRecur(value, lastIdx -1);
+        return value; //의미없음
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] DoInsertionSort(int[] value){
+        // 1. general
+        for (int i = 1; i < value.length; i++){
+            int loc = i-1;
+            int item = value[i]; // 편한 덮어쓰기 위해서.
+            while (loc >= 0 && value[loc] > item){
+                value[loc+1] = value[loc--]; // 한 칸씩 뒤로 미는거니까 덮어쓰는 위치도 변해야 함. i말고 loc+1써야함.
+            }
+            value[loc+1] = item;
+        }
+        return value;
+    }
 
-	///////////////////////////////////////////////////
-	private static void swap(int[] value, int index1, int index2) {
-		int temp = value[ index1 ];
-		value[ index1 ] = value[ index2 ];
-		value[ index2 ] = temp;
-	}
+    private static int[] InsertionRecur(int[] value, int lastIdx){
+        //2. recursive. -> stackoverflow error 생긴다. java stack 작고 소즁해..
+        if (lastIdx == 0) return value;
+        // recur은 자신보다 몸집 작은 애들에게 동일한 절차를 실행하는 것.
+        // unsorted가 n-1되는 걸 기준으로 해야하므로 일단 원소 1개일 때까지 분할.
+        InsertionRecur(value, lastIdx-1);
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	private static int[] DoBubbleSort(int[] value)
-	{
-		for ( int i = 0 ; i < value.length-1 ; i ++ ) {
-			for ( int j = 0 ; j < value.length -1 -i ; j ++) {
-				if ( value[ j ] > value[ j+1 ]) swap(value, j, j+1 );
-			}
-		}
-		return (value);
-	}
+        int item = value[lastIdx];
+        int loc = lastIdx-1;
+        while (loc >= 0 && item < value[loc]){
+            value[loc+1] = value[loc--];
+        }
+        value[loc+1] = item;
+        return value;
+    }
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	private static int[] DoInsertionSort(int[] value)
-	{
-		for ( int i = 0 ; i < value.length -1 ; i ++) {
-			for ( int j = i + 1 ; j > 0 ; j --) {
-				if ( value[ j ] < value[ j - 1 ] ) swap( value, j-1, j );
-			}
-		}
-		return (value);
-	}
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] DoHeapSort(int[] value){
+        //1. build heap
+        buildheap(value);
+        //2. sorting
+        int i = value.length-1;
+        while (i > 0){
+            swap(value, 0, i);
+            heapify(value, 0, i-1);
+            i--;
+        }
+        return (value);
+    }
+    private static void buildheap(int[] value){
+        //1. leaf있는 node중 가장 나중 node부터 시작
+        for (int i = (value.length-2)/2; i >= 0; i--){
+            heapify(value, i, value.length-1);
+        }
+    }
+    private static void heapify(int[] value, int node, int last){ // last 잘 넣어줘야 함.
+        int left = 2 * node + 1;
+        int right = 2 * node + 2;
+        int bigger;
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	private static int[] DoHeapSort(int[] value)
-	{
-		if( value.length != 0 ) {
-			//1. building heap
-			for ( int i = getParent( value.length -1 ); i >=0 ; -- i ) { percolate_down( value, i, value.length -1 ); }
+        if (right <= last){ // left, right 둘 다 있는 경우
+            bigger = value[left] > value[right] ? left : right;
+        }else if (left <= last){ // left만 있는 경우
+            bigger = left;
+        }else { return; }
 
-			//2. sorting
-			for ( int lastIndex = value.length -1; lastIndex > 0 ; -- lastIndex ) {
-				swap( value, 0, lastIndex );
-				percolate_down( value, 0, lastIndex -1 );
-			}
-		}
-		return (value);
-	}
+        if (value[node] < value[bigger]){
+            swap(value, node, bigger);
+            heapify(value, bigger, last);
+        }
+    }
 
-	private static void percolate_down( int[] value, int parent, int lastIndex )
-	{
-		if( parent == lastIndex ) return ; //sort마지막에 root하나만 남은 경우엔 percolate할 필요 없음.
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] DoMergeSort(int[] value, int begin, int end){
+        if (begin >= end) return value;
 
-		int child = compareChild( value, parent, lastIndex ); //child중 큰 값 인덱스 찾기
-		if( value[parent] < value[child] ) {
-			swap( value, parent, child );
+        int mid = (begin + end)/2;
+        // 실질적으로는 index만 옮기는 작업임.
+        DoMergeSort(value, begin, mid);
+        DoMergeSort(value, mid+1, end);
+        return Merge(value, begin, mid+1, end);
+    }
+    private static int[] Merge(int[] value, int arr1, int arr2, int end2){
+        int[] result = new int[end2 - arr1 + 1]; // merge에는 결과를 담을 배열이 따로 필요함.
+        int rIdx = 0;
+        int valIdx = arr1;
+        int end1 = arr2-1;
 
-			// 현재 child의 leftchild가 배열 안에 존재할 때에만 재귀 돈다. rightchild로 기준을 잡으면, right은 범위 밖이지만 left는 범위 안인데도 배제될 수가 있음.
-			if ( getLeftchild( child ) <= lastIndex ) percolate_down( value, child, lastIndex );
-		}
-	}
+        // 1. 두 배열 다 끝에 도달하지 않았을 경우
+        while (arr1 <= end1 && arr2 <= end2){ // arr2는 유동적이라 기준으로 삼으면 안 됨.
+            if (value[arr1] > value[arr2]){ result[rIdx++] = value[arr2++]; }
+            else{ result[rIdx++] = value[arr1++]; }
+        }
+        // 2. 왼쪽 배열만 남았을 경우. arr2는 postfix여서 end+1인 상태임.
+        while (arr1 <= end1){ result[rIdx++] = value[arr1++]; }
+        // 3. 오른쪽 배열만 남았을 경우
+        while (arr2 <= end2){ result[rIdx++] = value[arr2++]; }
+        // 4. merge한 부분 배열을 본 배열에 담는다.
+        for (int i = 0; i < result.length; i++){ value[valIdx++] = result[i]; }
+        return value;
+    }
 
-	private static int getParent( int child ) { return (child +1)/2 -1; }
-	private static int getLeftchild( int parent ) { return 2 * parent + 1; }
-	private static int getRightchild( int parent ) { return 2 * parent + 2; }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] DoQuickSort(int[] value, int begin, int end){
+        /*
+        // ver1. temp에 정렬 후 value에 다시 옮기는 방법. stackoverflow error.
 
-	private static int compareChild( int[] value, int parent, int lastIndex )
-	{
-		int leftChild = getLeftchild( parent ),
-			rightChild = getRightchild( parent );
+        // 1. 기준 잡고, 작은 건 왼쪽, 큰 건 오른쪽으로 정렬한다.
+        if (begin >= end) return value;
+        int[] result = new int[end - begin + 1];
+        int pivotIdx = (begin+end)/2;
+        int l = 0, r = result.length-1;
 
-		//범위 내에 leftchild만 있는 경우엔 leftchild 리턴
-		if ( leftChild == lastIndex ) return leftChild;
-		else { //둘 다 있으면 큰거 리턴
-			if( value[leftChild] > value[rightChild] ) return leftChild;
-			else return rightChild;
-		}
-	}
+        for (int i = begin; i < result.length; i ++){
+            if (i == pivotIdx) continue;
+            if (value[i] <= value[pivotIdx]){ result[l++] = value[i]; }
+            else { result[r--] = value[i]; }
+        }
+        result[r] = value[pivotIdx];
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	private static int[] DoMergeSort(int[] value)
-	{
-		mergeSort( value, 0, value.length -1);
-		return (value);
-	}
+        int j = 0;
+        for (int i = begin; i <= end; i++){ value[i] = result[j++]; }
 
-	private static void mergeSort( int[] value, int first, int last )
-	{
-		//길이가 1일 때에는 못 들어오게 조건 설정
-		if( first < last ){
-			int mid = ( first + last ) / 2;
-			mergeSort( value, first, mid );
-			mergeSort( value, mid + 1, last );
-			merge( value, first, mid, last );
-		}
-	}
+        // 2. 양쪽 각각 quicksort한다.
+        DoQuickSort(value, begin, r-1);
+        DoQuickSort(value, r+1, end);
+        return value;
+        */
 
-	private static void merge( int[] value, int first, int mid, int last )
-	{
-		//임시저장할 배열 만들기.
-		int[] temp = new int[last - first + 1];
-		int left = first,
-			right = mid + 1,
-			i = 0;
+        // ver2. swap통해서 정렬한다.
+        //------------------------------------------------------
+        //   small    | [b]  big     | [u] unsorted   | pivot |
+        // -----------------------------------------------------
+        if (begin >= end) return value;
+        int u = begin;      // unsorted의 시작 idx
+        int b = begin;     // pivot보다 big인 원소 시작 idx. small 갯수에 영향받음.
+        int pivot = value[end];
 
-		while( left <= mid && right <= last ){
-			if( value[left] <= value[right] ) temp[i++] = value[left++];
-			else temp[i++] = value[right++];
-		}
-		while( left <= mid ) temp[i++] = value[left++];
-		while( right <= last ) temp[i++] = value[right++];
+        //1. bigger, smaller 나눈다.
+            //1. [u] > pivot -> b stay, u++
+            //2. [u] < pivot -> [u] <-> [b-1], b++, u++
+            //3. pivot은 어느 idx를 잡든 맨 마지막으로 보낸다. 편의상 마지막 idx를 pivot으로 함.
+        while (u < end){
+            if (value[u] < pivot){
+                swap(value, u, b);
+                b++;
+            }
+            u++;
+        }
+        swap(value, u, b); // u == end 되면 멈추고 pivot<->[b]
 
-		// temp에 있는 것을 original array로 옮기기.
-		for ( i = 0; i < temp.length ; i ++ ) {
-				value[first++] = temp[i];
-		}
-	}
+        DoQuickSort(value, begin, b-1);
+        DoQuickSort(value, b+1, end);
+        return value;
+    }
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	private static int[] DoQuickSort(int[] value)
-	{
-		quickSort( value, 0, value.length -1 );
-		return (value);
-	}
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    private static int[] DoRadixSort(int[] value){
+        //1. 10진수를 기준으로 함. int의 범위는 10진수 10자리가 최대.
+        //-- 가장 큰 입력이 몇자리까지 있는지 찾는 것보다 10자리까지 그냥 도는 게 낫다.
 
+        // 음수, 양수 다 다루어야 함. 각 자리수 loop 돌 때 modulo 한 값이 cnt에 들어감.
+        // ex. -35 % 10 = -5, 25 % 10 = 5, 나오면 각 값에 10을 더함.
+        //          => [5]  ,  [15] 에 저장이 된다. [0]은 사용되지 않음.
+        int[] cnt = new int[20];
+        int[] temp = new int[value.length];
+        int[] dgt_cntIdx = new int[value.length];
 
-	private static void quickSort( int[] value, int first, int last )
-	{
-		//element가 1개일 때는 그냥 return
-		if( first >= last ) return;
+        //2. 일의자리부터 radix sorting한다. 
+        //-- Big-Theta(n)을 보장하기 위해 counting sort를 사용함.
+        for (int p = 0; p < 10; p++){
+            Arrays.fill(cnt, 0); // loop 돌 때마다 초기화해줘야 함. 
+            for (int i = 0; i < value.length; i++){
+                dgt_cntIdx[i] = value[i] / (int)Math.pow(10, p) % 10 + 10;
+                // digit + 10(진수)을 cnt의 index로 삼아서 cnt를 증가시킨다.
+                cnt[dgt_cntIdx[i]]++;
+            }
+            //3. counting sort에서 각 원소를 누적시킨다.
+            for (int i = 0; i < cnt.length-1; i++){
+                cnt[i+1] += cnt[i];
+            }
 
-		// first와 last는 입력값이고, left와 right는 재귀 돌면서 변화하는 값임.
-		// pivot은 각 배열의 가장 왼쪽 인덱스로 정함
-		int left = first,
-			right = last,
-			pivot = value[left];
+            //4. **stable sorting**을 위해 value의 뒷index부터 temp에 옮겨담는다.
+            for (int i = value.length-1; i >= 0; i--){
+                temp[--cnt[dgt_cntIdx[i]]] = value[i];
+            }
+            //5. temp->value. 한 자리수라면 4에서 바로 value에 넣어도 됐는데 value의 original 값을 살려야하므로 일단 temp에 옮긴다.
+            for (int i = 0; i < value.length; i++){
+                value[i] = temp[i];
+            }
+        }
 
-
-		while(true) {
-			//pointer를 양쪽 끝에서 중간 방향으로 이동시킴.
-			//왼쪽에 존재하는 원소가 pivot보다 작으면 swap필요 없으니 그냥 넘어간다. -3, 1, 0, 2 같은 경우에는 left는 [0]에 멈춰있을 것임
-			while( pivot > value[left] ) left++;
-			while( pivot < value[right] ) right--;
-			if( left >= right ) break;
-			swap( value, left, right ); //두 개의 while문이 끝났다는 것은 swap해야 할 것들이 생겼다는 의미.
-			left++; right --;
-		}
-		//여기서 left를 사용하면 재귀 도는 이유가 없어진다. 위와 같은 상황에서 left는 계속 0일 것이기에.
-		quickSort( value, first, right );
-		quickSort( value, right + 1, last );
-
-	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-	private static int[] DoRadixSort(int[] value)
-	{
-		radixSort(value, 10,10);
-		return (value);
-	}
-
-	private static void radixSort(int[] value, int base, int digits)
-	{	//base = 진수, digits = 자릿수의 갯수 (숫자가 max 몇 자리수인지)
-		//들어오는 숫자 중 가장 큰 숫자가 몇 자리수인지 구하지 않고 최대 자릿수까지 다 비교한다.
-
-		//음수와 양수를 다루어야 하니 진수*2만큼의 counting sort용 배열을 만들어준다.
-		//mod 연산을 거친 값이 들어간다. index 0은 사용되지 않을 것이다.
-		int[] count = new int[base*2];
-		int[] temp = new int[value.length];
-
-		//0. counting sort
-		//digit의 갯수만큼 for문을 돌려 정렬을 해야한다.
-		//for문에서느 i++보다 ++i가 더 빠르다고 해서 써보았따.
-		for( int k = 0; k < digits; ++k) {
-			Arrays.fill(count, 0);
-
-			int power = (int)Math.pow(base, k);
-			//1.
-			//숫자가 [n:0]일 때 LSB k번째 자리 숫자를 구하려면, 해당 숫자를 base^k로 나눈 몫을 다시 base로 % 해야 함.
-			//ex. 10진법 1345 의 10의 자리([1]) 숫자는, 1345 / 10^1 = 134, 134 % 10 = 4 로 나옴.
-			//음수까지 다루어야 하기에 kth_digit에 base를 더했다.
-			//ex. 10진법 45의 1의 자리 수는 5이고, base=10이므로, 이 숫자는 index 15의 count에 해당한다.
-			//ex. 반면, -45는 mod10을 하면 -5가 나오기때문에 base를 더하면 index 5의 count에 해당하게 된다.
-			for ( int i = 0; i < value.length; ++i) {
-				int kth_digit = value[i] / power % base;
-				++count[kth_digit + base];
-			}
-			//2.
-			//그 후엔 count의 각 element를 앞에서부터 누적시킨다.
-			for ( int i = 0; i < count.length -1 ; ++i) { count[i+1] += count[i]; }
-
-			//3.
-			//value의 오른쪽 원소부터 counting sort를 실행해야 stable하게 sort가 이루어진다.
-			//2.에서 value[i]가 증가시켰던 count의 인덱스를 찾는다--> count배열 그 인덱스의 원소 값에서 -1 한다--> temp[-1한 그 값]에 value[i]를 넣는다.
-			for ( int i = value.length -1; i >=0; --i) {
-				int index = value[i] / power % base + base;
-				temp[--count[index]] = value[i];
-			}
-			//4.
-			//temp-->value로 복사
-			for ( int i = 0; i < temp.length ; ++i ) { value[i] = temp[i]; }
-		}
-	}
+        return (value);
+    }
 }
 
